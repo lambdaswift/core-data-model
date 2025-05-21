@@ -74,7 +74,7 @@ Add the package to your Xcode project using Swift Package Manager:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/lambdaswift/CoreDataModel.git", from: "0.0.1")
+    .package(url: "https://github.com/lambdaswift/core-data-model.git", from: "0.0.2")
 ]
 ```
 
