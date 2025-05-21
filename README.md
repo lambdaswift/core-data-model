@@ -169,6 +169,37 @@ Entity("Department", managedObjectClass: Department.self) {
 }
 ```
 
+### Inverse Relationships
+
+For CloudKit integration and proper relationship management, you should define inverse relationships. This ensures that both sides of a relationship are properly connected:
+
+```swift
+Entity("ShoppingList", managedObjectClass: ShoppingList.self) {
+    Attribute.string("name")
+    Relationship(
+        name: "items",
+        destination: "ShoppingListItem",
+        isToMany: true,
+        inverse: "shoppingList"
+    )
+}
+
+Entity("ShoppingListItem", managedObjectClass: ShoppingListItem.self) {
+    Attribute.string("name")
+    Relationship(
+        name: "shoppingList",
+        destination: "ShoppingList",
+        inverse: "items"
+    )
+}
+```
+
+The `inverse` parameter specifies the name of the relationship on the destination entity that points back to this entity. This is required for:
+- CloudKit integration
+- Proper relationship management
+- Automatic relationship updates
+- Data consistency
+
 ### Delete Rules
 
 CoreDataModel supports all Core Data delete rules:

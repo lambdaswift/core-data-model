@@ -427,19 +427,22 @@ public struct Relationship {
     let isOptional: Bool
     let isToMany: Bool
     let deleteRule: NSDeleteRule
+    let inverse: String?
     
     public init(
         name: String,
         destination: String,
         isOptional: Bool = true,
         isToMany: Bool = false,
-        deleteRule: NSDeleteRule = .nullifyDeleteRule
+        deleteRule: NSDeleteRule = .nullifyDeleteRule,
+        inverse: String? = nil
     ) {
         self.name = name
         self.destination = destination
         self.isOptional = isOptional
         self.isToMany = isToMany
         self.deleteRule = deleteRule
+        self.inverse = inverse
     }
 }
 
@@ -513,12 +516,20 @@ public struct Model {
             entityDescriptions[entity.name] = description
         }
         
-        // Set up relationships
+        // Set up relationships and their inverses
         for entity in entities {
             let description = entityDescriptions[entity.name]!
             for relationship in entity.relationships {
                 let rel = description.relationshipsByName[relationship.name]!
                 rel.destinationEntity = entityDescriptions[relationship.destination]
+                
+                // Set up inverse relationship if specified
+                if let inverseName = relationship.inverse,
+                   let destinationEntity = entityDescriptions[relationship.destination],
+                   let inverseRelationship = destinationEntity.relationshipsByName[inverseName] {
+                    rel.inverseRelationship = inverseRelationship
+                    inverseRelationship.inverseRelationship = rel
+                }
             }
         }
         

@@ -57,6 +57,18 @@ class TestEntity: NSManagedObject {
     @NSManaged var uri: URL?
 }
 
+@objc(TestShoppingList)
+class TestShoppingList: NSManagedObject {
+    @NSManaged var name: String?
+    @NSManaged var items: Set<TestShoppingListItem>?
+}
+
+@objc(TestShoppingListItem)
+class TestShoppingListItem: NSManagedObject {
+    @NSManaged var name: String?
+    @NSManaged var shoppingList: TestShoppingList?
+}
+
 final class CoreDataModelTests: XCTestCase {
     func testBasicModelCreation() {
         let model = CoreDataModel {
@@ -248,5 +260,49 @@ final class CoreDataModelTests: XCTestCase {
         let personEntity = coreDataModel.entities.first
         
         XCTAssertEqual(personEntity?.managedObjectClassName, NSStringFromClass(NSManagedObject.self))
+    }
+    
+    func testInverseRelationships() {
+        let model = CoreDataModel {
+            Entity("ShoppingList", managedObjectClass: TestShoppingList.self) {
+                Attribute.string("name")
+                Relationship(
+                    name: "items",
+                    destination: "ShoppingListItem",
+                    isToMany: true,
+                    inverse: "shoppingList"
+                )
+            }
+            
+            Entity("ShoppingListItem", managedObjectClass: TestShoppingListItem.self) {
+                Attribute.string("name")
+                Relationship(
+                    name: "shoppingList",
+                    destination: "ShoppingList",
+                    inverse: "items"
+                )
+            }
+        }
+        
+        let coreDataModel = model.createModel()
+        let shoppingListEntity = coreDataModel.entities.first { $0.name == "ShoppingList" }
+        let shoppingListItemEntity = coreDataModel.entities.first { $0.name == "ShoppingListItem" }
+        
+        XCTAssertNotNil(shoppingListEntity)
+        XCTAssertNotNil(shoppingListItemEntity)
+        
+        let itemsRelationship = shoppingListEntity?.relationshipsByName["items"] as? NSRelationshipDescription
+        let shoppingListRelationship = shoppingListItemEntity?.relationshipsByName["shoppingList"] as? NSRelationshipDescription
+        
+        XCTAssertNotNil(itemsRelationship)
+        XCTAssertNotNil(shoppingListRelationship)
+        
+        // Verify inverse relationships are properly set up
+        XCTAssertEqual(itemsRelationship?.inverseRelationship, shoppingListRelationship)
+        XCTAssertEqual(shoppingListRelationship?.inverseRelationship, itemsRelationship)
+        
+        // Verify relationship properties
+        XCTAssertTrue(itemsRelationship?.isToMany ?? false)
+        XCTAssertFalse(shoppingListRelationship?.isToMany ?? true)
     }
 }
